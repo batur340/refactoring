@@ -38,9 +38,9 @@ public class StatementPrinter {
                 new StringBuilder("Statement for " + invoice.getCustomer()
                         + System.lineSeparator());
 
-        // 1) loop only for individual lines
+        // one loop: build each line
         for (Performance performance : invoice.getPerformances()) {
-            final Play play = plays.get(performance.getPlayID());
+            final Play play = getPlay(performance);
             final int thisAmount = getAmount(performance, play);
 
             result.append(String.format("  %s: %s (%s seats)%n",
@@ -49,14 +49,33 @@ public class StatementPrinter {
                     performance.getAudience()));
         }
 
-        // 2) totals are computed via helpers
+        // totals via helpers
         final int totalAmount = getTotalAmount();
         final int volumeCredits = getTotalVolumeCredits();
 
         result.append(String.format("Amount owed is %s%n",
                 usd(totalAmount)));
-        result.append(String.format("You earned %s credits%n", volumeCredits));
+        result.append(String.format("You earned %s credits%n",
+                volumeCredits));
         return result.toString();
+    }
+
+    private int getTotalAmount() {
+        int result = 0;
+        for (Performance performance : invoice.getPerformances()) {
+            final Play play = getPlay(performance);
+            result += getAmount(performance, play);
+        }
+        return result;
+    }
+
+    private int getTotalVolumeCredits() {
+        int result = 0;
+        for (Performance performance : invoice.getPerformances()) {
+            final Play play = getPlay(performance);
+            result += getVolumeCredits(performance, play);
+        }
+        return result;
     }
 
     private int getAmount(Performance performance, Play play) {
@@ -101,22 +120,8 @@ public class StatementPrinter {
         return result;
     }
 
-    private int getTotalAmount() {
-        int result = 0;
-        for (Performance performance : invoice.getPerformances()) {
-            final Play play = plays.get(performance.getPlayID());
-            result += getAmount(performance, play);
-        }
-        return result;
-    }
-
-    private int getTotalVolumeCredits() {
-        int result = 0;
-        for (Performance performance : invoice.getPerformances()) {
-            final Play play = plays.get(performance.getPlayID());
-            result += getVolumeCredits(performance, play);
-        }
-        return result;
+    private Play getPlay(Performance performance) {
+        return plays.get(performance.getPlayID());
     }
 
     private String usd(int amount) {
