@@ -34,28 +34,24 @@ public class StatementPrinter {
      * @throws RuntimeException if one of the play types is not known
      */
     public String statement() {
-        int totalAmount = 0;
-        int volumeCredits = 0;
         final StringBuilder result =
                 new StringBuilder("Statement for " + invoice.getCustomer()
                         + System.lineSeparator());
 
+        // 1) loop only for individual lines
         for (Performance performance : invoice.getPerformances()) {
             final Play play = plays.get(performance.getPlayID());
-
             final int thisAmount = getAmount(performance, play);
 
-            // add volume credits via helper
-            volumeCredits += getVolumeCredits(performance, play);
-
-            // print line for this order
             result.append(String.format("  %s: %s (%s seats)%n",
                     play.getName(),
                     usd(thisAmount),
                     performance.getAudience()));
-
-            totalAmount += thisAmount;
         }
+
+        // 2) totals are computed via helpers
+        final int totalAmount = getTotalAmount();
+        final int volumeCredits = getTotalVolumeCredits();
 
         result.append(String.format("Amount owed is %s%n",
                 usd(totalAmount)));
@@ -101,6 +97,24 @@ public class StatementPrinter {
         if ("comedy".equals(play.getType())) {
             result += performance.getAudience()
                     / Constants.COMEDY_EXTRA_VOLUME_FACTOR;
+        }
+        return result;
+    }
+
+    private int getTotalAmount() {
+        int result = 0;
+        for (Performance performance : invoice.getPerformances()) {
+            final Play play = plays.get(performance.getPlayID());
+            result += getAmount(performance, play);
+        }
+        return result;
+    }
+
+    private int getTotalVolumeCredits() {
+        int result = 0;
+        for (Performance performance : invoice.getPerformances()) {
+            final Play play = plays.get(performance.getPlayID());
+            result += getVolumeCredits(performance, play);
         }
         return result;
     }
